@@ -8,7 +8,12 @@ var linq = require('./linq.min.js');
 
 app.use(bodyParser.json());
 
-var graph = new neo4j.GraphDatabase('http://neo4j:cc150937@localhost:7474');
+var neo4jConfig = {
+  user: 'neo4j',
+  password: 'cc150937',
+  url: 'localhost:7474'
+}
+var graph = new neo4j.GraphDatabase('http://'+neo4jConfig.user+':'+neo4jConfig.cc150937+'@'+neo4jConfig.url);
 
 function responseBuilder(response) {
   var node = response[Object.keys(response)[0]];
@@ -23,8 +28,8 @@ router.get('/pessoas', function(request, response) {
     query: 'MATCH (a:Pessoa) RETURN a'
   }, function(error, result){
     response.json(result.select(x => responseBuilder(x)));
-  });
-  console.log("GET: Pessoas");
+    console.log("GET: Pessoas");
+  });  
 });
 
 router.get('/pessoas/:id/seguidos', function(request, response) {
@@ -36,8 +41,8 @@ router.get('/pessoas/:id/seguidos', function(request, response) {
     }
   }, function(error, result) {
     response.json(result.select(x => responseBuilder(x)));
-  });
-  console.log("GET: Seguidos de " + id);
+    console.log("GET: Seguidos de " + id);
+  });  
 });
 
 router.get('/pessoas/:id/seguidores', function(request, response) {
@@ -49,8 +54,8 @@ router.get('/pessoas/:id/seguidores', function(request, response) {
     }
   }, function(error, result) {
     response.json(result.select(x => responseBuilder(x)));
-  });
-  console.log("GET: Seguidores de " + id);
+    console.log("GET: Seguidores de " + id);
+  });  
 });
 
 router.post('/pessoas', function(request, response) {
@@ -60,8 +65,8 @@ router.post('/pessoas', function(request, response) {
     params: pessoa
   }, function(error, result) {
     response.json(responseBuilder(result.first()));
-  });
-  console.log('POST: Pessoas');
+    console.log('POST: Pessoas');
+  });  
 });
 
 router.post('/pessoas/:origem/seguir/:destino', function(request, response) {
@@ -75,8 +80,8 @@ router.post('/pessoas/:origem/seguir/:destino', function(request, response) {
     }
   }, function(error, result) {
     response.json(200);
-  });
-  console.log("POST: " + origem + " seguiu " + destino);
+    console.log("POST: " + origem + " seguiu " + destino);
+  });  
 });
 
 router.get('/postagens', function(request, response) {
@@ -84,8 +89,8 @@ router.get('/postagens', function(request, response) {
     query: 'MATCH (a:Postagem) RETURN a'
   }, function(error, result){
     response.json(result.select(x => responseBuilder(x)));
-  });
-  console.log("GET: Postagens");
+    console.log("GET: Postagens");
+  });  
 });
 
 router.post('/postagens', function(request, response) {
@@ -96,8 +101,8 @@ router.post('/postagens', function(request, response) {
     params: postagem
   }, function(error, result) {
     response.json(responseBuilder(result.first()));
-  });
-  console.log("POST: " + postagem.pessoa + " postou");
+    console.log("POST: " + postagem.pessoa + " postou");
+  });  
 });
 
 app.use('/api', router);
