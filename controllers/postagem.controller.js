@@ -19,7 +19,7 @@ module.exports = function(router, graph) {
 
     function postar(request, response) {
         var postagem = request.body;
-        postagem.pessoa = parseInt(postagem.pessoa.id);
+        postagem.pessoa = +postagem.pessoa.id;
         graph.cypher({
             query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem{ titulo: {titulo} }), (a)-[:POSTA]->(b) RETURN b',
             params: postagem
@@ -30,8 +30,8 @@ module.exports = function(router, graph) {
     }
 
     function curtir(request, response) {
-        var pessoa = parseInt(request.body.pessoa.id);
-        var postagem = parseInt(request.params.id);
+        var pessoa = +request.body.pessoa.id;
+        var postagem = +request.params.id;
         var reacao = request.body.reacao;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Postagem) WHERE ID(a) = {pessoa} AND ID(b) = {postagem} CREATE (a)-[c:CURTE{ reacao: {reacao} }]->(b) RETURN c',

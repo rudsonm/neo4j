@@ -20,11 +20,11 @@ module.exports = function(router, graph) {
     }
 
     function obterSeguidos(request, response) {
-        var id = request.params.id;
+        var id = +request.params.id;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (a)-[:SEGUE]->(b) RETURN b',
             params: {
-            id: parseInt(id)
+            id: id
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
@@ -44,11 +44,11 @@ module.exports = function(router, graph) {
     }
 
     function obterSeguidores(request, response) {
-        var id = request.params.id;
+        var id = +request.params.id;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (b)-[:SEGUE]->(a) RETURN b',
             params: {
-            id: parseInt(id)
+            id: id
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
@@ -57,13 +57,13 @@ module.exports = function(router, graph) {
     }
 
     function seguir(request, response) {
-        var origem = request.params.origem;
-        var destino = request.params.destino;
+        var origem = +request.params.origem;
+        var destino = +request.params.destino;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {origem} AND ID(b) = {destino} CREATE (a)-[:SEGUE]->(b)',
             params: {
-            origem: parseInt(origem),
-            destino: parseInt(destino)
+            origem: origem,
+            destino: destino
             }
         }, function(error, result) {
             response.json(200);
