@@ -1,5 +1,4 @@
 var linq = require('../utils/linq.min.js');
-var responseHandler = require('../utils/response.handler.js');
 
 module.exports = function(router, graph) {
     // GET
@@ -69,7 +68,7 @@ module.exports = function(router, graph) {
         }, function(error, result) {
             response.json(200);
             console.log("POST: " + origem + " seguiu " + destino);
-        });  
+        });
     }
 }
 

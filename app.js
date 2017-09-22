@@ -1,11 +1,8 @@
-var http = require('http');
-var neo4j = require('neo4j');
-var express = require('express');
 var bodyParser = require('body-parser');
+var express = require('express');
+var neo4j = require('neo4j');
 
 var app = express();
-var router = express.Router();
-
 app.use(bodyParser.json());
 
 var neo4jConfig = {
@@ -13,7 +10,12 @@ var neo4jConfig = {
   password: 'cc150937',
   url: 'localhost:7474'
 }
-var graph = new neo4j.GraphDatabase('http://'+neo4jConfig.user+':'+neo4jConfig.password+'@'+neo4jConfig.url);
+
+var graph = new neo4j.GraphDatabase('http://'.concat(
+  neo4jConfig.user, ':', neo4jConfig.password, '@', neo4jConfig.url)
+);
+
+var router = express.Router();
 
 require('./controllers/pessoa.controller.js')(router, graph);
 require('./controllers/postagem.controller.js')(router, graph);

@@ -1,5 +1,4 @@
 var linq = require('../utils/linq.min.js');
-var responseHandler = require('../utils/response.handler.js');
 
 module.exports = function(router, graph) {
     // GET
@@ -7,6 +6,7 @@ module.exports = function(router, graph) {
 
     // POST
     router.post('/postagens', postar);
+    router.post('/postagens/:id/curtir', curtir);
 
     function obter(request, response) {
         graph.cypher({
@@ -14,19 +14,35 @@ module.exports = function(router, graph) {
         }, function(error, result){
             response.json(result.select(x => cypherObjectToResponse(x)));
             console.log("GET: Postagens");
-        });  
+        });
     }
 
     function postar(request, response) {
         var postagem = request.body;
         postagem.pessoa = parseInt(postagem.pessoa.id);
         graph.cypher({
-            query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem{ titulo: {titulo} }), (a)-[:POSTOU]->(b) RETURN b',
+            query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem{ titulo: {titulo} }), (a)-[:POSTA]->(b) RETURN b',
             params: postagem
         }, function(error, result) {
             response.json(cypherObjectToResponse(result.first()));
             console.log("POST: " + postagem.pessoa + " postou");
-        });  
+        });
+    }
+
+    function curtir(request, response) {
+        var pessoa = parseInt(request.body.pessoa.id);
+        var postagem = parseInt(request.params.id);
+        var reacao = request.body.reacao;
+        graph.cypher({
+            query: 'MATCH (a:Pessoa), (b:Postagem) WHERE ID(a) = {pessoa} AND ID(b) = {postagem} CREATE (a)-[c:CURTE{ reacao: {reacao} }]->(b) RETURN c',
+            params: {
+                postagem: postagem,
+                reacao: reacao,
+                pessoa: pessoa
+            }
+        }, function(error, result) {
+            response.json(cypherObjectToResponse(result.first()));
+        });
     }
 }
 
