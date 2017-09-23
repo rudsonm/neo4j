@@ -7,7 +7,7 @@ module.exports = function(router, graph) {
     router.get('/pessoas/:id/seguidores', obterSeguidores);
 
     // POST
-    router.post('/pessoas', parir);
+    router.post('/pessoas', parir); // dá a luz a uma pessoa
     router.post('/pessoas/:origem/seguir/:destino', seguir);
 
     function obter(request, response) {
@@ -20,11 +20,10 @@ module.exports = function(router, graph) {
     }
 
     function obterSeguidos(request, response) {
-        var id = +request.params.id;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (a)-[:SEGUE]->(b) RETURN b',
             params: {
-            id: id
+                id: +request.params.id
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
@@ -35,8 +34,7 @@ module.exports = function(router, graph) {
     function parir(request, response) {
         var pessoa = request.body;
         graph.cypher({
-            query: 'CREATE (a:Pessoa{ nome: {nome} }) return a',
-            params: pessoa
+            query: 'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a'            
         }, function(error, result) {
             response.json(cypherObjectToResponse(result.first()));
             console.log('POST: Pessoas');
@@ -44,11 +42,10 @@ module.exports = function(router, graph) {
     }
 
     function obterSeguidores(request, response) {
-        var id = +request.params.id;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (b)-[:SEGUE]->(a) RETURN b',
             params: {
-            id: id
+                id: +request.params.id
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
@@ -57,19 +54,24 @@ module.exports = function(router, graph) {
     }
 
     function seguir(request, response) {
-        var origem = +request.params.origem;
-        var destino = +request.params.destino;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {origem} AND ID(b) = {destino} CREATE (a)-[:SEGUE]->(b)',
             params: {
-            origem: origem,
-            destino: destino
+                origem: +request.params.origem,
+                destino: +request.params.destino
             }
         }, function(error, result) {
             response.json(200);
             console.log("POST: " + origem + " seguiu " + destino);
         });
     }
+}
+
+function buildQueryValues(params) {
+    var query = '{';
+    for (property in params)
+        query = query.concat(property, ':{', property, '},');
+    return query.slice(0, query.length-1) + '}';
 }
 
 function cypherObjectToResponse(response) {
