@@ -9,6 +9,13 @@ module.exports = function(router, graph) {
     router.post('/pessoas/:pessoa/reagir/:postagem', reagir);
 
     function obter(request, response) {
+        if(Boolean(request.query.pessoa))
+            obterPorPessoa(request, response);            
+        else
+            obterTodas(request, response);
+    }
+
+    function obterTodas(request, response) {
         graph.cypher({
             query: 'MATCH (a:Postagem) RETURN a'
         }, function(error, result){
@@ -17,14 +24,31 @@ module.exports = function(router, graph) {
         });
     }
 
+    function obterPorPessoa(request, response) {
+        var pessoa = +request.query.pessoa;
+        var query = [
+            'MATCH (a:Pessoa), (b:Pessoa), (p:Postagem) WHERE ID(a) = {pessoa}',
+            'AND ( (a)-[:POSTA]->(p) OR (a)-[:SEGUE]->(b) AND (b)-[:POSTA]->(p) )',
+            'RETURN DISTINCT p'
+        ];
+        graph.cypher({
+            query: query.join(' '),
+            params: {
+                pessoa: pessoa
+            }
+        }, function(error, result){
+            response.json(result.select(x => cypherObjectToResponse(x)));
+            console.log("GET: Postagens de " + pessoa);
+        });
+    }
+
     function postar(request, response) {
         var postagem = request.body;
         postagem.data = new Date();
+        postagem.pessoa = +request.params.pessoa;
         graph.cypher({
             query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem'+buildQueryValues(postagem)+'), (a)-[:POSTA]->(b) RETURN b',
-            params: {
-                pessao: +request.params.pessoa
-            }
+            params: postagem
         }, function(error, result) {
             response.json(cypherObjectToResponse(result.first()));
             console.log("POST: " + postagem.pessoa + " postou");

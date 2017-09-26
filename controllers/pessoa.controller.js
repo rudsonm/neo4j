@@ -11,10 +11,19 @@ module.exports = function(router, graph) {
     router.post('/pessoas/:origem/seguir/:destino', seguir);
 
     function obter(request, response) {
+        var query = 'MATCH (a:Pessoa) WHERE 1 = 1';
+
+        if(Boolean(request.query.email))
+            query = query.concat(' AND a.email = {email}');
+        if(Boolean(request.query.senha))
+            query = query.concat(' AND a.senha = {senha}');
+
+        query = query.concat(' RETURN a');
         graph.cypher({
-            query: 'MATCH (a:Pessoa) RETURN a'
-        }, function(error, result){
-            response.json(result.select(x => cypherObjectToResponse(x)));
+            query: query,
+            params: request.query
+        }, function(error, result) {
+            response.json((Boolean(result) ? result.select(x => cypherObjectToResponse(x)) : []));
             console.log("GET: Pessoas");
         });
     }
@@ -27,16 +36,17 @@ module.exports = function(router, graph) {
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
-            console.log("GET: Seguidos de " + id);
+            console.log("GET: Seguidos de " + request.params.id);
         });
     }
 
     function parir(request, response) {
         var pessoa = request.body;
         graph.cypher({
-            query: 'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a'            
+            query: 'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a',
+            params: pessoa
         }, function(error, result) {
-            response.json(cypherObjectToResponse(result.first()));
+            response.json((Boolean(result) ? cypherObjectToResponse(result.first()) : {}));
             console.log('POST: Pessoas');
         });
     }
@@ -49,16 +59,18 @@ module.exports = function(router, graph) {
             }
         }, function(error, result) {
             response.json(result.select(x => cypherObjectToResponse(x)));
-            console.log("GET: Seguidores de " + id);
+            console.log("GET: Seguidores de " + request.params.id);
         });  
     }
 
     function seguir(request, response) {
+        var origem = +request.params.origem;
+        var destino = +request.params.destino;
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {origem} AND ID(b) = {destino} CREATE (a)-[:SEGUE]->(b)',
             params: {
-                origem: +request.params.origem,
-                destino: +request.params.destino
+                origem: origem,
+                destino: destino
             }
         }, function(error, result) {
             response.json(200);

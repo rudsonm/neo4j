@@ -15,6 +15,12 @@ var graph = new neo4j.GraphDatabase('http://'.concat(
   neo4jConfig.user, ':', neo4jConfig.password, '@', neo4jConfig.url)
 );
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 var router = express.Router();
 
 require('./controllers/pessoa.controller.js')(router, graph);
