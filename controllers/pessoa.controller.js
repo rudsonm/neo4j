@@ -9,6 +9,7 @@ module.exports = function(router, graph) {
     // POST
     router.post('/pessoas', parir); // dá a luz a uma pessoa
     router.post('/pessoas/:origem/seguir/:destino', seguir);
+    router.post('/pessoas/:id/avatar', uploadAvatar);
 
     function obter(request, response) {
         var query = 'MATCH (a:Pessoa) WHERE 1 = 1';
@@ -75,6 +76,24 @@ module.exports = function(router, graph) {
         }, function(error, result) {
             response.json(200);
             console.log("POST: " + origem + " seguiu " + destino);
+        });
+    }
+
+    function uploadAvatar(request, response) {
+        var pessoa = +request.params.id;
+        var avatar = request.body.avatar;
+        graph.cypher({
+            query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} SET a.avatar = {avatar}',
+            params: {
+                id: pessoa,
+                avatar: avatar
+            }
+        }, function(error, result) {
+            if(error)
+                throw error;
+            else
+                response.send([]);
+            console.log("PUT: Upload avatar de ".concat(pessoa));
         });
     }
 }

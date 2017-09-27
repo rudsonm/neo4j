@@ -6,7 +6,7 @@ module.exports = function(router, graph) {
 
     // POST
     router.post('/pessoas/:pessoa/postagens', postar);
-    router.post('/pessoas/:pessoa/reagir/:postagem', reagir);
+    router.post('/pessoas/:pessoa/reagir/:postagem', reagir);    
 
     function obter(request, response) {
         if(Boolean(request.query.pessoa))
@@ -24,11 +24,11 @@ module.exports = function(router, graph) {
         });
     }
 
-    function obterPorPessoa(request, response) {
+    function obterPorPessoa(request, response) {        
         var pessoa = +request.query.pessoa;
         var query = [
             'MATCH (a:Pessoa), (b:Pessoa), (p:Postagem) WHERE ID(a) = {pessoa}',
-            'AND ( (a)-[:POSTA]->(p) OR (a)-[:SEGUE]->(b) AND (b)-[:POSTA]->(p) )',
+            'AND ( (a)-[:POSTA]->(p) OR ( (a)-[:SEGUE]->(b) AND (b)-[:POSTA]->(p) ) )',
             'RETURN DISTINCT p'
         ];
         graph.cypher({
@@ -67,7 +67,7 @@ module.exports = function(router, graph) {
             response.json(cypherObjectToResponse(result.first()));
             console.log("POST: " + request.body.pessoa.id  + " reagiu a " + request.params.id);
         });
-    }
+    }    
 }
 
 function buildQueryValues(params) {
