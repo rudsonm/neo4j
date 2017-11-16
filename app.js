@@ -1,11 +1,13 @@
-var bodyParser = require('body-parser');
-var express = require('express');
-var neo4j = require('neo4j');
+const fileUpload = require('express-fileupload');
+const bodyParser = require('body-parser');
+const express = require('express');
+const neo4j = require('neo4j');
 
 var app = express();
 app.use(bodyParser.json());
+app.use(fileUpload());
 
-var neo4jConfig = {
+const neo4jConfig = {
   user: 'neo4j',
   password: 'cc150937',
   url: 'localhost:7474'

@@ -1,19 +1,21 @@
-var linq = require('../utils/linq.min.js');
+const linq = require('../utils/linq.min.js');
+const fs = require('fs');
 
 module.exports = function(router, graph) {
     // GET
     router.get('/pessoas', obter);
     router.get('/pessoas/:id/seguidos', obterSeguidos);
     router.get('/pessoas/:id/seguidores', obterSeguidores);
+    router.get('/pessoas/:id/avatar', obterImagem);
 
     // POST
     router.post('/pessoas', parir); // dá a luz a uma pessoa
     router.post('/pessoas/:origem/seguir/:destino', seguir);
-    router.post('/pessoas/:id/avatar', uploadAvatar);
+    router.post('/pessoas/:id/avatar', uploadImage);
 
     function obter(request, response) {
-        var query = 'MATCH (a:Pessoa) WHERE 1 = 1';
-
+        var query = `MATCH (a:Pessoa) WHERE 1 = 1`;
+        
         if(Boolean(request.query.email))
             query = query.concat(' AND a.email = {email}');
         if(Boolean(request.query.senha))
@@ -29,7 +31,7 @@ module.exports = function(router, graph) {
         });
     }
 
-    function obterSeguidos(request, response) {
+    function obterSeguidos(request, response) {        
         graph.cypher({
             query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (a)-[:SEGUE]->(b) RETURN b',
             params: {
@@ -44,7 +46,7 @@ module.exports = function(router, graph) {
     function parir(request, response) {
         var pessoa = request.body;
         graph.cypher({
-            query: 'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a',
+            query:  'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a',
             params: pessoa
         }, function(error, result) {
             response.json((Boolean(result) ? cypherObjectToResponse(result.first()) : {}));
@@ -79,21 +81,38 @@ module.exports = function(router, graph) {
         });
     }
 
-    function uploadAvatar(request, response) {
-        var pessoa = +request.params.id;
-        var avatar = request.body.avatar;
+    function uploadImage(request, response) {
+        if (!request.files)
+            return response.status(400).send('Nenhum arquivo foi enviado.');
+        
+        let id = +request.params.id;
+        let file = request.files['file'];
+        let buffer = 'data:'.concat(file.mimetype, ';base64,', file.data.toString('base64'));
+
         graph.cypher({
-            query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} SET a.avatar = {avatar}',
+            query: 'MATCH (a:Pessoa) WHERE ID(a) = {id} SET a.avatar = {image}',
             params: {
-                id: pessoa,
-                avatar: avatar
+                id: id,
+                image: buffer
             }
         }, function(error, result) {
             if(error)
                 throw error;
             else
-                response.send([]);
-            console.log("PUT: Upload avatar de ".concat(pessoa));
+                response.status(200).send('Avatar definido com sucesso.');
+            console.log("PUT: Upload avatar de ".concat(id));
+        });
+    }
+
+    function obterImagem(request, response) {        
+        let id = +request.params.id;
+        graph.cypher({
+            query: 'MATCH (a:Pessoa) WHERE ID(a) = {id} RETURN a.avatar',
+            params: {
+                id: id
+            }
+        }, function(error, result) {
+            response.send(result["0"]["a.avatar"]);
         });
     }
 }
