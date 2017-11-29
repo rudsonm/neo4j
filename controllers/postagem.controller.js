@@ -8,6 +8,9 @@ module.exports = function(router, graph) {
     router.post('/pessoas/:pessoa/postagens', postar);
     router.post('/pessoas/:pessoa/reagir/:postagem', reagir);    
 
+    // REMOVE
+    router.delete('/postagens/:id', remover);
+
     function obter(request, response) {
         if(Boolean(request.query.pessoa))
             obterPorPessoa(request, response);            
@@ -44,8 +47,15 @@ module.exports = function(router, graph) {
 
     function postar(request, response) {
         var postagem = request.body;
+        
         postagem.data = new Date();
         postagem.pessoa = +request.params.pessoa;
+
+        if(request.files && request.files['file']) {
+            let file = request.files['file'];
+            postagem.imagem = 'data:'.concat(file.mimetype, ';base64,', file.data.toString('base64'));
+        }        
+
         graph.cypher({
             query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem'+buildQueryValues(postagem)+'), (a)-[:POSTA]->(b) RETURN b',
             params: postagem
@@ -67,7 +77,21 @@ module.exports = function(router, graph) {
             response.json(cypherObjectToResponse(result.first()));
             console.log("POST: " + request.body.pessoa.id  + " reagiu a " + request.params.id);
         });
-    }    
+    }
+
+    function remover(request, response) {
+        console.log("Entrou pra remover");
+        let id = +request.params.id;
+        graph.cypher({
+            query: 'MATCH (a:Postagem) WHERE ID(a) = {id} DETACH DELETE a',
+            params: {
+                id: id
+            }
+        }, function(error, result) {
+            console.log("DELETE: postagem ".concat(id, " removida"))
+            response.json(200);
+        });
+    }
 }
 
 function buildQueryValues(params) {

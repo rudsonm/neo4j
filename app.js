@@ -19,7 +19,8 @@ var graph = new neo4j.GraphDatabase('http://'.concat(
 
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, User-Agent");
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
   next();
 });
 

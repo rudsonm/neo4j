@@ -20,6 +20,8 @@ module.exports = function(router, graph) {
             query = query.concat(' AND a.email = {email}');
         if(Boolean(request.query.senha))
             query = query.concat(' AND a.senha = {senha}');
+        if(Boolean(request.query.nome))
+            query = query.concat(' AND toUpper(a.nome) CONTAINS toUpper({nome})');
 
         query = query.concat(' RETURN a');
         graph.cypher({
