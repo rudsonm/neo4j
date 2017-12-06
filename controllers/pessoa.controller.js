@@ -13,8 +13,11 @@ module.exports = function(router, graph) {
     router.post('/pessoas/:origem/seguir/:destino', seguir);
     router.post('/pessoas/:id/avatar', uploadImage);
 
+    // DELETE
+    router.delete('/pessoas/:origem/seguir/:destino', deseguir);
+
     function obter(request, response) {
-        var query = `MATCH (a:Pessoa) WHERE 1 = 1`;
+        var query = `MATCH (a:PESSOA) WHERE 1 = 1`;
         
         if(Boolean(request.query.email))
             query = query.concat(' AND a.email = {email}');
@@ -35,7 +38,7 @@ module.exports = function(router, graph) {
 
     function obterSeguidos(request, response) {        
         graph.cypher({
-            query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (a)-[:SEGUE]->(b) RETURN b',
+            query: 'MATCH (a:PESSOA), (b:PESSOA) WHERE ID(a) = {id} AND (a)-[:SEGUE]->(b) RETURN b',
             params: {
                 id: +request.params.id
             }
@@ -48,7 +51,7 @@ module.exports = function(router, graph) {
     function parir(request, response) {
         var pessoa = request.body;
         graph.cypher({
-            query:  'CREATE (a:Pessoa'+buildQueryValues(pessoa)+') return a',
+            query:  'CREATE (a:PESSOA'+buildQueryValues(pessoa)+') return a',
             params: pessoa
         }, function(error, result) {
             response.json((Boolean(result) ? cypherObjectToResponse(result.first()) : {}));
@@ -58,7 +61,7 @@ module.exports = function(router, graph) {
 
     function obterSeguidores(request, response) {
         graph.cypher({
-            query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {id} AND (b)-[:SEGUE]->(a) RETURN b',
+            query: 'MATCH (a:PESSOA), (b:PESSOA) WHERE ID(a) = {id} AND (b)-[:SEGUE]->(a) RETURN b',
             params: {
                 id: +request.params.id
             }
@@ -72,7 +75,7 @@ module.exports = function(router, graph) {
         var origem = +request.params.origem;
         var destino = +request.params.destino;
         graph.cypher({
-            query: 'MATCH (a:Pessoa), (b:Pessoa) WHERE ID(a) = {origem} AND ID(b) = {destino} CREATE (a)-[:SEGUE]->(b)',
+            query: 'MATCH (a:PESSOA), (b:PESSOA) WHERE ID(a) = {origem} AND ID(b) = {destino} CREATE (a)-[:SEGUE]->(b)',
             params: {
                 origem: origem,
                 destino: destino
@@ -80,6 +83,20 @@ module.exports = function(router, graph) {
         }, function(error, result) {
             response.json(200);
             console.log("POST: " + origem + " seguiu " + destino);
+        });
+    }
+
+    function deseguir(request, response) {
+        let origem = +request.params.origem;
+        let destino = +request.params.destino;
+        graph.cypher({
+            query: "MATCH (a:PESSOA), (b:PESSOA), (a)-[c:SEGUE]->(b) WHERE ID(a) = {origem} AND ID(b) = {destino} DELETE c",
+            params: {
+                origem: origem,
+                destino: destino
+            }
+        }, (error, result) => {
+            response.json(200);
         });
     }
 
@@ -92,7 +109,7 @@ module.exports = function(router, graph) {
         let buffer = 'data:'.concat(file.mimetype, ';base64,', file.data.toString('base64'));
 
         graph.cypher({
-            query: 'MATCH (a:Pessoa) WHERE ID(a) = {id} SET a.avatar = {image}',
+            query: 'MATCH (a:PESSOA) WHERE ID(a) = {id} SET a.avatar = {image}',
             params: {
                 id: id,
                 image: buffer
@@ -109,7 +126,7 @@ module.exports = function(router, graph) {
     function obterImagem(request, response) {        
         let id = +request.params.id;
         graph.cypher({
-            query: 'MATCH (a:Pessoa) WHERE ID(a) = {id} RETURN a.avatar',
+            query: 'MATCH (a:PESSOA) WHERE ID(a) = {id} RETURN a.avatar',
             params: {
                 id: id
             }

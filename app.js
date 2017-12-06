@@ -34,3 +34,5 @@ app.use('/api', router);
 app.listen(1234, function() {
   console.log('Server online on port: 1234');
 });
+
+//require('./readfile.js')(graph);

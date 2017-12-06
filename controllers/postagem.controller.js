@@ -8,7 +8,7 @@ module.exports = function(router, graph) {
     router.post('/pessoas/:pessoa/postagens', postar);
     router.post('/pessoas/:pessoa/reagir/:postagem', reagir);    
 
-    // REMOVE
+    // DELETE
     router.delete('/postagens/:id', remover);
 
     function obter(request, response) {
@@ -20,7 +20,7 @@ module.exports = function(router, graph) {
 
     function obterTodas(request, response) {
         graph.cypher({
-            query: 'MATCH (a:Postagem) RETURN a'
+            query: 'MATCH (a:POSTAGEM) RETURN a'
         }, function(error, result){
             response.json(result.select(x => cypherObjectToResponse(x)));
             console.log("GET: Postagens");
@@ -30,7 +30,7 @@ module.exports = function(router, graph) {
     function obterPorPessoa(request, response) {        
         var pessoa = +request.query.pessoa;
         var query = [
-            'MATCH (a:Pessoa), (b:Pessoa), (p:Postagem) WHERE ID(a) = {pessoa}',
+            'MATCH (a:PESSOA), (b:PESSOA), (p:POSTAGEM) WHERE ID(a) = {pessoa}',
             'AND ( (a)-[:POSTA]->(p) OR ( (a)-[:SEGUE]->(b) AND (b)-[:POSTA]->(p) ) )',
             'RETURN DISTINCT p'
         ];
@@ -46,10 +46,10 @@ module.exports = function(router, graph) {
     }
 
     function postar(request, response) {
-        var postagem = request.body;
-        
+        var postagem = request.body;        
         postagem.data = new Date();
         postagem.pessoa = +request.params.pessoa;
+        console.log(postagem);
 
         if(request.files && request.files['file']) {
             let file = request.files['file'];
@@ -57,7 +57,7 @@ module.exports = function(router, graph) {
         }        
 
         graph.cypher({
-            query: 'MATCH (a:Pessoa) WHERE ID(a) = {pessoa} CREATE (b:Postagem'+buildQueryValues(postagem)+'), (a)-[:POSTA]->(b) RETURN b',
+            query: 'MATCH (a:PESSOA) WHERE ID(a) = {pessoa} CREATE (b:POSTAGEM'+buildQueryValues(postagem)+'), (a)-[:POSTA]->(b) RETURN b',
             params: postagem
         }, function(error, result) {
             response.json(cypherObjectToResponse(result.first()));
@@ -68,7 +68,7 @@ module.exports = function(router, graph) {
     function reagir(request, response) {
         var reacao = request.body;
         graph.cypher({
-            query: 'MATCH (a:Pessoa), (b:Postagem) WHERE ID(a) = {pessoa} AND ID(b) = {postagem} CREATE (a)-[c:REAGE'+buildQueryValues(reacao)+']->(b) RETURN c',
+            query: 'MATCH (a:PESSOA), (b:POSTAGEM) WHERE ID(a) = {pessoa} AND ID(b) = {postagem} CREATE (a)-[c:REAGE'+buildQueryValues(reacao)+']->(b) RETURN c',
             params: {
                 pessoa: +request.params.pessoa,
                 postagem: +request.params.postagem
@@ -83,7 +83,7 @@ module.exports = function(router, graph) {
         console.log("Entrou pra remover");
         let id = +request.params.id;
         graph.cypher({
-            query: 'MATCH (a:Postagem) WHERE ID(a) = {id} DETACH DELETE a',
+            query: 'MATCH (a:POSTAGEM) WHERE ID(a) = {id} DETACH DELETE a',
             params: {
                 id: id
             }
